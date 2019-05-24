@@ -1,5 +1,12 @@
+
 def lerAlunos():
-  print("lerAlunos")
+  global alunos
+  with open('alunos.csv', 'r') as alunos:
+    print("teste")
+    linhas = alunos.readlines()
+    for linha in linhas:
+      aluno = linha.split(";")
+      alunos.append( { aluno[0] } )
 
 def lermaterias():
   print("lerAlunos")
