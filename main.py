@@ -1,127 +1,190 @@
+import matplotlib.pyplot as plt
 
-
+# inicializar variaveis
 notas = []
 materias = []
 alunos = []
 
-def atualizarAlunos():
-  global alunos
-  with open('alunos.csv', 'w') as alunosCsv:
-    string = []
-    for i in range( len(alunos) ):
-      string.append( str( alunos[i]["id"] ) + ";" + str( alunos[i]["nome"] ) + ";" ) 
-    alunosCsv.writelines(string)
 
-def atualizarMaterias():
-  global materias
-  with open('materias.csv', 'w') as materiasCsv:
-    string = []
-    for i in range( len(materias) ):
-      string.append( str( materias[i]["id"]) + ";" + str( materias[i]["nome"] ) + ";" + str( materias[i]["peso"] ) ) 
-    materiasCsv.writelines(string)
+# atualizar arqivvo csv com novos valores
+def atualizarCsv(arquivo, valores):
+	if( len(valores) < 1 ):
+		print("valores vázios")
+		return False
+	with open(arquivo, "w") as csv:
+		conteudo = []
+		string = ""
+		# adicionar o cabeçalho do arquivo csv com as chaves do dicionario
+		for i in range( len(valores[0].keys()) ):
+			if(i == ( len( list( valores[0].keys() ) ) - 1 ) ):
+				string += ( list( valores[0].keys() )[i]+"\n" )
+			else:
+				string += ( list( valores[0].keys() )[i]+";" )
+		if(not string == ""):
+			conteudo.append(string)
 
-def atualizarNotas():
-  global notas
-  with open('notas.csv', 'w') as notasCsv:
-    string = []
-    for i in range( len(notas) ):
-      string.append( str( notas[i]["valor"] ) + ";" + str( notas[i]["aluno"] ) + ";" + str( notas[i]["materia"] ) ) 
-    notasCsv.writelines(string)
+		# adicionar os valores do arquivo csv
+		for i in range( len(valores) ):
+			total = len( valores[i].items() ) - 1
+			cont = 0
+			string = ""
+			for keys, valor in valores[i].items():
+				string += valor+"\n" if cont == total else valor+";"
+				cont += 1
+			conteudo.append(string)
+		print(conteudo)
+		csv.writelines(conteudo)
+		
 
-def lerAlunos():
-  global alunos
-  with open('alunos.csv', 'r') as alunosCsv:
-    linhas = alunosCsv.readlines()
-    for linha in linhas:
-      arr = linha.split(";")
-      aluno = {
-        "id": arr[0],
-        "nome": arr[1]
-      }
-      alunos.append( aluno )
-
-def lerMaterias():
-  global materias
-  with open('materias.csv', 'r') as materiasCsv:
-    linhas = materiasCsv.readlines()
-    for linha in linhas:
-      arr = linha.split(";")
-      materia = {
-        "id": arr[0],
-        "nome": arr[1],
-      }
-      materias.append( materia )
-
-def lerNotas():
-  global notas
-  with open('notas.csv', 'r') as notasCsv:
-    linhas = notasCsv.readlines()
-    for linha in linhas:
-      nota = linha.split(";")
-      notas.append( nota )
-
-def mediaNotas(materia):
-  soma = 0
-  contador = 0
-  for nota in notas:
-    if( nota["materia"] == materia["id"] ):
-      soma += nota["valor"]
-      contador += 1
-  # cada prova vale 10
-  return ( soma / contador ) * 10
-
-def procurarMateria(nome):
-  global materias
-  for materia in materias:
-    print(" - ")
-    print("*",materia["nome"].replace("\n", ""),"*")
-    print("*",nome,"*")
-    print(nome == materia["nome"])
-    print(" - ")
-    print(" ")
-    if(materia["nome"] == nome):
-      return materia
-  return -1
-
-def mostraGrade():
-  mediaMat = mediaNotas( procurarMateria("Matematica") )
-  mediaPor = mediaNotas( procurarMateria("Portugues") )
-  mediaHis = mediaNotas( procurarMateria("Historia") )
-  mediaGeo = mediaNotas( procurarMateria("Geografia") )
-
-  print( mediaMat ) # 60% 40%
-  print( mediaPor ) # 30% 70%
-  print( mediaHis ) # 80% 20%
-  print( mediaGeo ) # 10% 90%
-
-  pesoMat = 100 - mediaMat
-  pesoPor = 100 - mediaPor
-  pesoHis = 100 - mediaHis
-  pesoGeo = 100 - mediaGeo
-
-  soma = pesoMat + pesoPor + pesoHis + pesoGeo
-
-  mat = soma / pesoMat
-  port = soma / pesoPor
-  hist = soma / pesoHis
-  geo = soma / pesoGeo
-
-  print("matemática: ",mat)
-  print("matemática: ",port)
-  print("matemática: ",hist)
-  print("matemática: ",geo)
-
-
+# ler or arquivos csv
+def lerCsv( arquivo, campos ):
+	array = []
+	first = True
+	with open(arquivo, "r") as csv:
+		linhas = csv.readlines()
+		for linha in linhas:
+			arr = linha.split(";")
+			if( len(arr) > 1 ):
+				dicionario = {}
+				# pula o cabeçalho (primeira linha) do csv
+				if( first ):
+					first = False
+				else:
+					for i in range( len( campos ) ):
+						# percorre tanto a lista dos campos e os valores do csv para adicionar campos ao dicionario, e retira a quebra de linha dor csv (\n)
+						if( i == (len(campos)-1) ):
+							dicionario[campos[i]] = arr[i].replace("\n","")
+						else:
+							dicionario[campos[i]] = arr[i]
+					array.append( dicionario )
+	return array
+	
 def inicializar():
-  lerAlunos()
-  lerMaterias()
-  lerNotas()
+	global alunos, materias, notas
+	alunos = lerCsv("alunos.csv", [ "id","nome" ])
+	materias = lerCsv("materias.csv", [ "id","nome","peso" ])
+	notas = lerCsv("notas.csv", [ "id" , "valor" , "aluno", "materia" ])
+	
 
+# Calcula a media e uma matéria esécifíca
+def mediaNotas( materia ):
+	soma = 0
+	contador = 0
+	for nota in notas:
+		# verifica todas as notas especifícas da matéria passada pelo parametro
+		if( nota["materia"] == materia["id"] ):
+			soma += round( float( nota["valor"] ), 2 )
+			contador += 1
+	# cada prova vale 10, por isso multiplicar or 10 dara a porcentagem
+	return ( soma / contador ) * 10
+
+# Calcula a media e uma matéria esécifíca
+def mediaAluno( materia, aluno ):
+	soma = 0
+	contador = 0
+	for nota in notas:
+		# verifica todas as notas especifícas da matéria passada pelo parametro
+		if( nota["materia"] == materia["id"] and nota["aluno"] == aluno["id"] ):
+			soma += round( float( nota["valor"] ), 2 )
+			contador += 1
+	# cada prova vale 10, por isso multiplicar or 10 dara a porcentagem
+	return ( soma / contador ) * 10
+	
+def grade():
+	global materias
+	# pegar todas as médias das matérias
+	medias = []
+	for materia in materias:
+		medias.append( mediaNotas( materia ) )
+	# calcular a necessidade de cada materia
+	necessidades = []
+	for media in medias:
+		necessidades.append( 100 - media )
+	# igualar cada o valor de necessidade com regra de 3
+	soma = sum(necessidades)
+	nomeMaterias = []
+	porcentagens = []
+	for i in range( len(materias) ):
+		porcentagem = ( 100 * necessidades[i] ) / soma
+		porcentagem = round(porcentagem, 2)
+		porcentagens.append( porcentagem )
+		nomeMaterias.append( materias[i]["nome"] )
+		# print("A turma terá {0}% de aulas da matéria {1}".format(porcentagem, materias[i]["nome"]))
+	return [ nomeMaterias, porcentagens ]
+		
+def gradeAlunos( aluno ):
+	global materias
+	medias = []
+	for materia in materias:
+		medias.append( mediaAluno( materia, aluno ) )
+	nomeMaterias = []
+	porcentagens = []
+	for i in range( len(materias) ):
+		porcentagens.append( medias[i] )
+		nomeMaterias.append( materias[i]["nome"][0:3] )
+	# retorna uma lista pois será usava pra visualização do gráfico
+	return [ nomeMaterias, porcentagens ]
+	
+def mostrarGrade():
+	resultado = grade()
+	
+	labels = resultado[0]
+	sizes = resultado[1]
+	
+	fig, ax = plt.subplots()
+	ax.pie(sizes, labels=labels, autopct='%1.2f%%')
+	ax.axis('equal')
+	ax.set_title('Matérias da Escola')
+	
+	plt.show()
+	
+def procurarAluno(nome):
+	# mostrar alunos
+	for aluno in alunos:
+		if( aluno["nome"] == nome):
+			return aluno
+	return -1
+	
+def rendimentoAluno():
+	# mostrar alunos
+	for aluno in alunos:
+		print(aluno["nome"])
+	nome = input("escreva o nome do aluno para visualizar seu rendimento: ")
+	aluno = procurarAluno(nome)
+	if( not aluno == -1 ):        
+		resultado = gradeAlunos( aluno )
+		
+		labels = resultado[0]
+		sizes = resultado[1]
+		
+		fig, ax = plt.subplots()
+		plt.bar(labels, sizes, width=0.5)
+		plt.figure(figsize=(20, 3))
+		ax.set_ylabel('Nota')
+		ax.set_xlabel('Matéria')
+		ax.set_title('Rendimento do aluno')
+		plt.show()
+		
+	else:
+		print("aluno inválido")    
+		
+def opcoes():
+	op = 0
+	while(not op == 3):
+		op = int( input('''
+1 - ver a divisão de matérias da turma
+2 - ver o rendimento de um aluno específico
+3 - sair
+        
+Selecione uma das opções: ''') )
+		if(op == 1):
+			mostrarGrade()
+		elif(op == 2):
+			rendimentoAluno()
+		elif(op == 3):
+			print("Obrigado por usar o gerenciamento Estudantil")
+		else:
+			print("Opção inválida")
+    
 inicializar()
-mostraGrade()
-
-'''
-atualizarAlunos()
-atualizarMaterias()
-atualizarNotas()
-'''
+opcoes()
